@@ -1,0 +1,28 @@
+#!/bin/bash
+# ht is a handy replacement for head that aligns columns in a tab separated file
+# Written by Dennis Gascoigne at some point in 2010
+
+NROWS="10"
+SHOWALL="NO"
+while getopts "n:a" opt
+do
+    case $opt in
+	(a) SHOWALL="YES";;
+	(n) NROWS=$OPTARG;;
+	(*) echo "$0: error - unrecognized option $1" >&2; exit 1;;
+	esac
+done
+
+INFILE=${@:OPTIND}
+
+#[ "$INFILE" = "" ] && echo "ERROR: No input file specified use - to take from stdin" >&2 && exit 1
+
+
+[ ! -f $INFILE ] && echo "ERROR: Input file does not exist" >&2 && exit 1
+if [ "$SHOWALL" = "YES" ]; then
+	cat $INFILE | awk 'BEGIN{FS="\t";OFS="\t"}{if(NR==1){if (NF>=1) {printf("1")};if (NF>1){for (i=2;i<=NF;i++){printf("\t%s",i)}};printf("\n")};print $0}' | column -t -s $'\t'
+else
+	head -${NROWS} $INFILE | awk 'BEGIN{FS="\t";OFS="\t"}{if(NR==1){if (NF>=1) {printf("1")};if (NF>1){for (i=2;i<=NF;i++){printf("\t%s",i)}};printf("\n")};print $0}' | column -t -s $'\t'
+fi
+
+
