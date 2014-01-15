@@ -62,16 +62,22 @@ if [ -d "$OUT" ]; then
 	echo "Error: Output directory $OUT already exists";
 	exit 1;
 fi
-mkdir -p $OUT
 
 TMP=$(mktemp -d --tmpdir=/tmp)
 
+echo -e "$0: Running Tophat with :\n$TOPHAT $PARAMS -o $TMP $INDEX $FASTQ" | tee $TMP/tophat_command.txt;
 if [ -z "$DRY" ]; then
 	$TOPHAT $PARAMS -o $TMP $INDEX $FASTQ;
-else
-	echo "$TOPHAT $PARAMS -o $TMP $INDEX $FASTQ" | tee $TMP/test_tophat.output;
 fi
 
+echo "$0: Creating output directory $OUT"
+mkdir -p $OUT
+
+echo "$0: Copying Tophat results to $OUT"
 cp -R $TMP/* $OUT
+
+echo "$0: Cleaning up $TMP"
 rm -rf $TMP
+
+echo "$0: Done"
 
