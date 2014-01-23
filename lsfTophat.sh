@@ -8,10 +8,15 @@ set -e -o pipefail
 usage()
 {
 cat << EOF
-usage: $0 [-dh] -p <params list> -o <out folder> -i <genome index> -f <fastq> -t <tophat binary>
+usage: $0 [-dnh] -p <params list> -o <out folder> -i <genome index> -f <fastq> -t <tophat binary>
 
-This script makes your life easier when you have to run Tophat over LSF 
-
+This script makes your life easier when you have to run Tophat over LSF.
+Tophat's output is stored in a temporary directory on the node (under /tmp) 
+and upon colpletion the results are copied back to an output folder 
+specified with the -o option.
+If the -n option is specified the results are directly stored in the output
+directory rather than in /tmp. This is useful if the tophat tmp data exceeds
+the size available on /tmp.
 OPTIONS:
    -h      Show this message
    -p      List of parameters to be passed to Tophat
@@ -20,12 +25,12 @@ OPTIONS:
    -f      Path to Fastq file
    -t      Path to Tophat binary
    -d	   Dry run
-
+   -n	   Write directly to the folder specified by -o
 
 EOF
 }
 
-while getopts “hp:o:i:f:t:d” OPTION
+while getopts “hnp:o:i:f:t:d” OPTION
 do
      case $OPTION in
          h)
@@ -50,6 +55,8 @@ do
 	 d)
 	     DRY=1
 	     ;;
+	 n)
+	     NOTMP=1
      esac
 done
 
@@ -63,21 +70,27 @@ if [ -d "$OUT" ]; then
 	exit 1;
 fi
 
-TMP=$(mktemp -d --tmpdir=/tmp)
+if [ -z "$NOTMP" ]; then
+	TMP=$(mktemp -d --tmpdir=/tmp)
+else
+	TMP=$OUT
+	mkdir -p $TMP
+fi
 
 echo -e "$0: Running Tophat with :\n$TOPHAT $PARAMS -o $TMP $INDEX $FASTQ" | tee $TMP/tophat_command.txt;
 if [ -z "$DRY" ]; then
 	$TOPHAT $PARAMS -o $TMP $INDEX $FASTQ;
 fi
 
-echo "$0: Creating output directory $OUT"
-mkdir -p $OUT
+if [ -z "$NOTMP" ]; then
+	echo "$0: Creating output directory $OUT"
+	mkdir -p $OUT
 
-echo "$0: Copying Tophat results to $OUT"
-cp -R $TMP/* $OUT
+	echo "$0: Copying Tophat results to $OUT"
+	cp -R $TMP/* $OUT
 
-echo "$0: Cleaning up $TMP"
-rm -rf $TMP
-
+	echo "$0: Cleaning up $TMP"
+	rm -rf $TMP
+fi
 echo "$0: Done"
 
