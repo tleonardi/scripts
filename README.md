@@ -15,6 +15,7 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 ## p2fdr
 Reads a tab separated file and uses the Benjamini and Hochberg method
 to calculate the FDR for the p-values in the specified column
+
 Usage:
 
     PtoFDR.sh [-h] [-H] [-m SIZE] -c column filename
@@ -42,7 +43,8 @@ ht is a handy replacement for head that aligns columns in an orderly fashion.
 This script was written by Dennis Gascoigne at some point in 2010
 
 # lsfTophat
-This script allows to run Tophat on an LSF system with a shared filesystem. It runs Tophat on a node using a temporary local folder to store output. Upon completion, it copies the output back to a user-specified path
+This script allows to run Tophat on an LSF system with a shared filesystem. It runs Tophat on a node using a temporary local folder to store output. Upon completion, it copies the output back to a user-specified path.
+
 Usage:
 
     usage: lsfTophat [-dnh] -p <params list> -o <out folder> -i <genome index> -f <fastq> -t <tophat binary>
@@ -66,20 +68,21 @@ Usage:
 
 # seqimp2html
 Seqimp2html makes a folder with all QC plots from seqimp and an index.html file with links.
+
 Usage:
 
-    seqimp2html analysis_folder description.txt output_dir
-	analysis folder: path to the analysis folder created by SequenceImp
-	description.txt: description file submitted to SequenceImp
-	output_dir: path to the directory where to save output
+    seqimp2html <analysis_folder> <description.txt> <output_dir>
+	<analysis folder>: path to the analysis folder created by SequenceImp
+	<description.txt>: description file submitted to SequenceImp
+	<output_dir>: path to the directory where to save output
 
 # seqimpSummarise
 SeqimpSummarise reads a SeqIMP description files and produces a properly formatted summary table of counts.
 Usage:
  
-    seqimpSummarise analysis_folder description.txt
-	analysis folder: path to the analysis folder created by SequenceImp
-	description.txt: description file submitted to SequenceImp
+    seqimpSummarise <analysis_folder> <description.txt>
+	<analysis folder>: path to the analysis folder created by SequenceImp
+	<description.txt>: description file submitted to SequenceImp
 
 # dropbox
 
@@ -89,7 +92,6 @@ Usage:
 
     dropbox [-s] [-e <email>] [-h] [-u <url>] [-f <folder>] [-n] filename
     Options:
-    
       -s            Shorten the URL using Google APIs
       -e <email>    Email address to send the link to.
                     Default: tleonardi@gmail.com
@@ -108,7 +110,6 @@ Usage:
 
     csv2htm [OPTIONS] input.csv
     Options:
-    
       -d       Specify delimiter to look for, instead of tab.
       --head   Treat first line as header, required for proper function of datatables
       --dt     Use Datables
