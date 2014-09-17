@@ -5,7 +5,7 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 - [p2fdr](#p2fdr)
 - [calcContext.R](#calcContext.R)
 - [collapseCSV](#collapseCSV)
-- [ht](#ht]
+- [ht](#ht)
 - [lsfTophat](#lsfTophat)
 - [seqimp2html](#seqimp2html)
 - [seqimpSummarise](#seqimpSummarise)
