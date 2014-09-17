@@ -18,7 +18,7 @@ to calculate the FDR for the p-values in the specified column
 
 Usage:
 
-    PtoFDR.sh [-h] [-H] [-m SIZE] -c column filename
+    p2fdr [-h] [-H] [-m SIZE] -c <column> filename
        -h displays this help message
        -H ignores the first (header) row of the file
        -m use SIZE as main memory buffer for sort (default 100M).
@@ -72,17 +72,17 @@ Seqimp2html makes a folder with all QC plots from seqimp and an index.html file 
 Usage:
 
     seqimp2html <analysis_folder> <description.txt> <output_dir>
-	<analysis folder>: path to the analysis folder created by SequenceImp
-	<description.txt>: description file submitted to SequenceImp
-	<output_dir>: path to the directory where to save output
+        <analysis folder>: path to the analysis folder created by SequenceImp
+        <description.txt>: description file submitted to SequenceImp
+        <output_dir>: path to the directory where to save output
 
 # seqimpSummarise
 SeqimpSummarise reads a SeqIMP description files and produces a properly formatted summary table of counts.
 Usage:
  
     seqimpSummarise <analysis_folder> <description.txt>
-	<analysis folder>: path to the analysis folder created by SequenceImp
-	<description.txt>: description file submitted to SequenceImp
+        <analysis folder>: path to the analysis folder created by SequenceImp
+        <description.txt>: description file submitted to SequenceImp
 
 # dropbox
 
