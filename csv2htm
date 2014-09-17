@@ -1,0 +1,139 @@
+#!/bin/bash
+#The MIT License (MIT)
+#
+#Copyright (c) 2014 Tommaso Leonardi, tleonardi@gmail.com
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+#
+# The awk code has been modified from Alain Kelder (http://giantdorks.org/alain/bash-and-awk-to-convert-delimited-data-csv-tsv-etc-to-html-tables/)
+
+usage()
+{
+cat <<EOF
+ 
+Usage: $(basename $0) [OPTIONS] input.csv
+ 
+This script creates an HTML table from a tab delimited file. 
+Optionally, the table will use the DataTables JS library.
+The delimited input file can be provided as a filename 
+argument or through stdin.
+Options:
+ 
+  -d       Specify delimiter to look for, instead of tab.
+  --head   Treat first line as header, required for proper function of datatables
+  --dt     Use Datables
+  --help   Print this help message
+EOF
+}
+ 
+while true; do
+  case "$1" in
+    -d)
+      shift
+      d="$1"
+      ;;
+    --help)
+      usage
+      exit 0
+      ;;
+    --head)
+      head="-v hdr=1"
+      ;;
+    --dt)
+      dt="1"
+      head="-v hdr=1"
+      ;;
+    -*)
+      echo "ERROR: unknown option '$1'" 1>&2
+      echo "see '--help' for usage" 1>&2
+      exit 1
+      ;;
+    *)
+      f=$1
+      break
+      ;;
+  esac
+  shift
+done
+ 
+if [[ -z "$d" ]]; then
+  d="\t"
+fi
+ 
+if [[ "$f" ]]; then
+  exec < $f
+fi
+
+
+echo "<html>"
+
+# Header and JS/CSS loading
+if [[ "$dt" ]]; then
+echo -e '
+	<head>
+	<script src='//code.jquery.com/jquery-1.11.1.min.js'></script>
+	<script src='//cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js'></script>
+	<link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.2/css/jquery.dataTables.css">
+	<script type="text/javascript" class="init">
+		$(document).ready(function(){
+			$("#example").dataTable();
+		});
+	</script>
+	</head>
+'
+
+fi
+
+
+awk -F "$d" $head '
+    BEGIN{
+    printf "<table id=\"example\" class=\"display\" cellspacing=\"0\" width=\"100%\">"
+    }
+    {
+    gsub(/</, "\\&lt;")
+    gsub(/>/, "\\&gt;")
+    if(NR == 1 && hdr) {  
+      printf "    <thead>\n"
+    gsub(/&/, "\\&gt;")    }
+    if(NR == 1 && !hdr){
+      printf "    <tbody>\n"
+    }
+    if(NR == 2 && hdr){
+      printf "    <tbody>\n"
+    }
+    print "      <tr>"
+    for(f = 1; f <= NF; f++)  {
+      if((NR == 1 && hdr) || (NR == last && ftr)) {
+        printf "        <th>%s</th>\n", $f
+      }
+      else printf "        <td>%s</td>\n", $f
+    }     
+    print "      </tr>"
+    if(NR == 1 && hdr) {
+      printf "    </thead>\n"
+    }
+ }
+ END{   
+    printf "    </tbody>\n"
+    print "  </table>"
+  }
+' <&0
+
+
+echo "</html>"

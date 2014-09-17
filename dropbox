@@ -1,0 +1,168 @@
+#!/bin/bash
+#The MIT License (MIT)
+#
+#Copyright (c) 2014 Tommaso Leonardi, tleonardi@gmail.com
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+#
+
+
+# Configure default values
+EMAIL="tleonardi@gmail.com"
+URL="http://www.ebi.ac.uk/~tl344/dropbox"
+FOLDER="/homes/tl344/public_html/dropbox"
+
+usage()
+{
+cat <<EOF
+
+Usage: $(basename "$0") [-s] [-e <email>] [-h] [-u <url>] [-f <folder>] [-n] filename
+
+This script copies a file to an http-accessible folder, provides the URL
+pointing to it (and optionally a shortened URL) and optionally sends the
+the link via email.
+If the filename is not specified, the input is read from stdin and saved
+in the html folder 
+Options:
+
+  -s		Shorten the URL using Google APIs
+  -e <email>	Email address to send the link to.
+		Default: $EMAIL
+  -h		Print this help screen
+  -u <URL>	Base URL of the http folder
+		Default: $URL
+  -f <folder>	Save the file in the specified http-accessible folder.
+		Default: $FOLDER
+  -n		Do not send an email
+  -o <name>	Target file name
+		Default: source filename or date-time.html if reading from stdin
+EOF
+}
+
+
+ARGS=$(getopt -o "se:hu:f:no:" -n "dropbox.sh" -- "$@")
+
+if [ $? -ne 0 ]; then
+    usage
+    exit 1;
+fi
+
+eval set -- "$ARGS"
+
+# Now go through all the options
+while true; do
+    case "$1" in
+        -s)
+                SHORT=1
+		shift 1
+                ;;
+        -e)
+                if [[ -n "$2" ]]; then
+                        EMAIL=$2
+                        shift 2
+                fi
+                ;;
+        -u)
+                if [[ -n "$2" ]]; then
+                        URL=$2
+                        shift 2
+                fi
+                ;;
+        -f)
+                if [[ -n "$2" ]]; then
+                        FOLDER=$2
+                        shift 2
+                fi
+                ;;
+        -h)
+                usage
+		exit 1
+                ;;
+	-n)
+		NOEMAIL=1
+		shift 1
+		;;
+	-o)
+		if [[ -n "$2" ]]; then
+			OUT=$2
+			shift 2
+		fi
+		;;
+	\?)
+      		echo "Invalid option: -$OPTARG" >&2
+      		exit 1
+      		;;
+        --) shift ; break;;
+    esac
+done
+
+
+
+if [[ -n "$1" ]]; then
+	# FILE provided
+	FILE=$1
+	if [[ ! -f $FILE ]]; then
+		echo "$FILE: no such file";
+		exit 1;
+	fi
+	#echo "Filename set: $1" >&2
+	exec < $FILE
+	if [[ -z "$OUT" ]]; then
+		OUT=$(basename $FILE)
+	fi
+else 
+	# From STDIN
+	#echo "Filename not set: stdin" >&2
+	if [[ -z "$OUT" ]]; then
+		OUT=$(date +"%m_%d_%Y-%H:%M:%S.html")
+	fi
+fi
+
+# This routine checks if the $OUT file already exists
+# If it does, appends -1, -2... to the end of the file
+if [[ -f $FOLDER/$OUT ]]; then
+    EXT="${OUT##*.}"    
+    # If $OUT doesn't have an extension, force EXT to an empty string
+    if [[ "$OUT" = "$EXT" ]]; then
+	EXT=""
+    else
+    	EXT=.$EXT
+    fi
+    BASEFILE=$(basename $OUT $EXT)
+
+    i=1
+    while [[ -e ${FOLDER}/${BASEFILE}-${i}${EXT} ]] ; do
+        let i++
+    done
+    OUT=${BASEFILE}-${i}${EXT}
+fi
+
+cat <&0 > $FOLDER/$OUT
+echo $URL/$OUT
+EMAILTEXT="URL: $URL/$OUT"
+if [[ -n $SHORT ]]; then
+	SHORTURL=$(curl --silent https://www.googleapis.com/urlshortener/v1/url   -H 'Content-Type: application/json'   -d '{"longUrl":'"\"$URL/$OUT\""'}' | grep -Po '"id":.*?[^\\]",' | perl -pe 's/"id"://; s/^[ ]"//; s/",$//' )
+	echo $SHORTURL
+	EMAILTEXT="Long URL: $URL/$OUT \nShort URL: $SHORTURL"
+fi
+
+if [[ -z $NOEMAIL ]];then
+	echo -e "$EMAILTEXT" | mail -s "Dropbox.sh: link to \"$OUT\"" $EMAIL
+fi
+
