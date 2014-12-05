@@ -61,7 +61,7 @@ library("reshape")
 library("RColorBrewer")
 library("ggplot2")
 
-if ( sortByFirst & sortEach){
+if ( sortByFirst && sortEach){
 	stop("Incompatible options: sortEach and sortByFirst.")
 	quit(save = "no", status = 1, runLast = FALSE)	
 }
@@ -71,15 +71,25 @@ if (length(labels) != length(files)){
 	quit(save = "no", status = 1, runLast = FALSE)	
 }
 
-if (!is.na(secondaryLabels) & length(secondaryLabels) != length(labels)){
+if (!is.na(secondaryLabels) && length(secondaryLabels) != length(labels)){
 	stop("There must be the same number of primary and secondary labels")
 	quit(save = "no", status = 1, runLast = FALSE)	
 }
 
 
-if (!is.na(secondaryLabels) & length(secondaryLabels)==1){
+if (!is.na(secondaryLabels) && length(secondaryLabels)==1){
 	stop("It's unnecessary to use secondary labels if you only have one file")
 	quit(save = "no", status = 1, runLast = FALSE)	
+}
+
+if(is.na(secondaryLabels) && max(table(labels))>1){
+	        stop("Each sample must have a unique label")
+        quit(save = "no", status = 1, runLast = FALSE)
+}
+
+if(!is.na(secondaryLabels) && max(table(labels, secondaryLabels))>1){
+	        stop("Each sample must have a unique combination of label and secondary label")
+        quit(save = "no", status = 1, runLast = FALSE)
 }
 
 for(fileName in files){
@@ -98,7 +108,7 @@ for(fileName in files){
 		firsFileDimensions <- dimensions$dim
 	}
 	
-	if(!all(categories$Name == firstFileCatNames) | !all(categories$number == firstFileCatNumbers) | !all(dimensions$dim == firsFileDimensions)){
+	if(!all(categories$Name == firstFileCatNames) || !all(categories$number == firstFileCatNumbers) || !all(dimensions$dim == firsFileDimensions)){
 		stop(paste(fileName, " has a header different from", files[1], sep=""))
 		quit(save = "no", status = 1, runLast = FALSE)
 	}
@@ -123,14 +133,14 @@ for(fileName in files){
 	mat$Row <- 1:nrow(mat)
 
 	# If this is not the first file, reorder based on the first file
-	if(fileIndex!=1 & sortEach==FALSE){
+	if(fileIndex!=1 && sortEach==FALSE){
 		mat <- mat[origRowOrder,]
 	}
 	# Assign the categories and sort the entries of each category
 	from=1
 	for(i in 1:nrow(categories)){
 		to <- from + categories[i,"number"] - 1
-		if((fileIndex==1 & sortByFirst == TRUE) | sortEach==TRUE){
+		if((fileIndex==1 && sortByFirst == TRUE) || sortEach==TRUE){
 			mat[from:to,] <- mat[from:to,][order(rowMeans(mat[from:to,1:nfields]), decreasing=F),]
 		}
 		mat[from:to,"Category"] <- categories[i,"Name"]
@@ -182,18 +192,18 @@ if(body==0){
 # Faceting
 if(nrow(categories)==1) {
    if (length(labels<2)) facets <- NA
-   else if (length(labels)>=2 & is.na(secondaryLabels)) facets <- facet_grid(Label ~ ., scales = "free", space = "free")
-   else if (length(labels)>=2 & !is.na(secondaryLabels)) facets <- facet_grid(Label ~ secLabel, scales = "free", space = "free")
+   else if (length(labels)>=2 && is.na(secondaryLabels)) facets <- facet_grid(Label ~ ., scales = "free", space = "free")
+   else if (length(labels)>=2 && !is.na(secondaryLabels)) facets <- facet_grid(Label ~ secLabel, scales = "free", space = "free")
 }
 
 if(nrow(categories)>1) {
    if (length(labels)<2){
 	   facets <- facet_grid(Category ~ ., scales = "free", space = "free")
    }
-   else if (length(labels)>=2 & is.na(secondaryLabels)) {
+   else if (length(labels)>=2 && is.na(secondaryLabels)) {
 	   facets <- facet_grid(Category ~ Label, scales = "free", space = "free")
    }
-   else if (length(labels)>=2 & !is.na(secondaryLabels)) {
+   else if (length(labels)>=2 && !is.na(secondaryLabels)) {
 	   facets <- facet_grid(secLabel+Category ~ Label, scales = "free", space = "free")
    }
 }
@@ -236,18 +246,18 @@ if(profileFreeScales){
 # Faceting
 if(nrow(categories)==1) {
    if (length(labels<2)) facets <- NA
-   else if (length(labels)>=2 & is.na(secondaryLabels)) facets <- NA
-   else if (length(labels)>=2 & !is.na(secondaryLabels)) facets <- facet_grid(~secLabel, scales=profScales)
+   else if (length(labels)>=2 && is.na(secondaryLabels)) facets <- NA
+   else if (length(labels)>=2 && !is.na(secondaryLabels)) facets <- facet_grid(~secLabel, scales=profScales)
 }
 
 if(nrow(categories)>1) {
    if (length(labels)<2){
            facets <- facet_grid(Category~., scales=profScales)
    }
-   else if (length(labels)>=2 & is.na(secondaryLabels)) {
+   else if (length(labels)>=2 && is.na(secondaryLabels)) {
            facets <- facet_grid(Category~., scales=profScales)
    }
-   else if (length(labels)>=2 & !is.na(secondaryLabels)) {
+   else if (length(labels)>=2 && !is.na(secondaryLabels)) {
            facets <- facet_grid(Category~secLabel, scales=profScales)
    }
 }
