@@ -3,7 +3,7 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 
 ## Table of contents
 - [p2fdr](#p2fdr)
-- [calcContext.R](#calccontext.r)
+- [calcContext.R](#calccontextr)
 - [collapseCSV](#collapsecsv)
 - [ht](#ht)
 - [lsfTophat](#lsftophat)
