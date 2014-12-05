@@ -3,14 +3,14 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 
 ## Table of contents
 - [p2fdr](#p2fdr)
-- [calcContext.R](#calccontextr)
+- [calcContext](#calccontextr)
 - [collapseCSV](#collapsecsv)
 - [ht](#ht)
 - [lsfTophat](#lsftophat)
 - [seqimp2html](#seqimp2html)
 - [seqimpSummarise](#seqimpsummarise)
 - [dropbox](#dropbox)
-- [csv2html](#csv2html)
+- [csv2html](#csv2htm)
 - [dtCompare](#dtcompare)
 
 ## p2fdr
