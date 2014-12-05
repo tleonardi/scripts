@@ -11,6 +11,7 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 - [seqimpSummarise](#seqimpSummarise)
 - [dropbox](#dropbox)
 - [csv2html](#csv2html)
+- [dtCompare](#dtCompare)
 
 ## p2fdr
 Reads a tab separated file and uses the Benjamini and Hochberg method
@@ -114,3 +115,13 @@ Usage:
       --head   Treat first line as header, required for proper function of datatables
       --dt     Use Datables
       --help   Print this help message
+
+# dtCompare
+This script allows the visual comparison of multiple bigWig files.
+It reads a set of matrices produced by deeptools and it generates multiple heatmaps in a single plot.
+It uses ggplot2 for plotting and allows various forms of sorting in the plots (see comments for the configuration parameters)
+Each input matrix can be generated with a command like this:
+
+```
+computeMatrix reference-point --referencePoint TSS --regionsFileName annotation.bed  --sortRegions "no" --outFileNameMatrix matrix.txt --scoreFileName path.to.bigWig --beforeRegionStartLength 1000 --afterRegionStartLength 1000 --binSize 10 --missingDataAsZero --outFileName outfile
+```
