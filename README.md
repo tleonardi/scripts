@@ -3,15 +3,15 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 
 ## Table of contents
 - [p2fdr](#p2fdr)
-- [calcContext.R](#calcContext.R)
-- [collapseCSV](#collapseCSV)
+- [calcContext.R](#calccontext.r)
+- [collapseCSV](#collapsecsv)
 - [ht](#ht)
-- [lsfTophat](#lsfTophat)
+- [lsfTophat](#lsftophat)
 - [seqimp2html](#seqimp2html)
-- [seqimpSummarise](#seqimpSummarise)
+- [seqimpSummarise](#seqimpsummarise)
 - [dropbox](#dropbox)
 - [csv2html](#csv2html)
-- [dtCompare](#dtCompare)
+- [dtCompare](#dtcompare)
 
 ## p2fdr
 Reads a tab separated file and uses the Benjamini and Hochberg method
