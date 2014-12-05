@@ -60,6 +60,8 @@ library("data.table")
 library("reshape")
 library("RColorBrewer")
 library("ggplot2")
+library("dplyr")
+library("scales")
 
 if ( sortByFirst && sortEach){
 	stop("Incompatible options: sortEach and sortByFirst.")
@@ -75,7 +77,6 @@ if (!is.na(secondaryLabels) && length(secondaryLabels) != length(labels)){
 	stop("There must be the same number of primary and secondary labels")
 	quit(save = "no", status = 1, runLast = FALSE)	
 }
-
 
 if (!is.na(secondaryLabels) && length(secondaryLabels)==1){
 	stop("It's unnecessary to use secondary labels if you only have one file")
@@ -127,6 +128,8 @@ for(fileName in files){
 	# Read the matrix
 	mat <- read.delim(fileName, comment.char = "#", header=F, sep=" ")
 	colnames(mat) <- 1:ncol(mat)
+	mat[is.na(mat)] <- 0 # Add warning message
+	# Set negative number to 0 and print warning message
 
 	# Keep track of how many columns contain data
 	nfields <- ncol(mat)
@@ -170,6 +173,7 @@ mat2 <- rbindlist(mat2)
 
 mm <- melt(mat2)
 
+mm$Labels <- factor(mm$Labels, levels=unique(labels))
 
 
 
@@ -189,34 +193,37 @@ if(body==0){
 	
 }
 
+
+heatmapPlot <- ggplot(mm, aes(x=variable, y=Row, fill=value)) + geom_tile() + scale_y_discrete(breaks=NULL) + xscale + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))
+
 # Faceting
 if(nrow(categories)==1) {
-   if (length(labels<2)) facets <- NA
-   else if (length(labels)>=2 && is.na(secondaryLabels)) facets <- facet_grid(Label ~ ., scales = "free", space = "free")
-   else if (length(labels)>=2 && !is.na(secondaryLabels)) facets <- facet_grid(Label ~ secLabel, scales = "free", space = "free")
+   if (length(labels)>=2 && is.na(secondaryLabels)) heatmapPlot <- heatmapPlot + facet_grid(Label ~ ., scales = "free", space = "free")
+   else if (length(labels)>=2 && !is.na(secondaryLabels)) heatmapPlot <- heatmapPlot + facet_grid(Label ~ secLabel, scales = "free", space = "free")
 }
 
 if(nrow(categories)>1) {
    if (length(labels)<2){
-	   facets <- facet_grid(Category ~ ., scales = "free", space = "free")
+           heatmapPlot <- heatmapPlot + facet_grid(Category ~ ., scales = "free", space = "free")
    }
    else if (length(labels)>=2 && is.na(secondaryLabels)) {
-	   facets <- facet_grid(Category ~ Label, scales = "free", space = "free")
+           heatmapPlot <- heatmapPlot + facet_grid(Category ~ Label, scales = "free", space = "free")
    }
    else if (length(labels)>=2 && !is.na(secondaryLabels)) {
-	   facets <- facet_grid(secLabel+Category ~ Label, scales = "free", space = "free")
+           heatmapPlot <- heatmapPlot + facet_grid(secLabel+Category ~ Label, scales = "free", space = "free")
    }
 }
 
 
 # Scale fill
 if(logNorm) {
-	mm$value <- log10(mm$value + 1)
-	fill <- scale_fill_gradientn(colours=hmcol)
+        mm$value <- log10(mm$value + 1)
 }
 
 if(!is.na(satQuantile)){
-	fill <- scale_fill_gradientn(colours=hmcol, limits=c(0,quantile(mm$value, satQuantile)), oob=squish)
+        heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol, limits=c(0,quantile(mm$value, satQuantile)), oob=squish)
+} else {
+        heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol)
 }
 
 # Define names for outfiles
@@ -226,9 +233,8 @@ outFileProfile <- paste(outFile, "_profile.pdf", sep="")
 
 
 pdf(outFileHeatMap, width=heatW, height=heatH)
-	print(ggplot(mm, aes(x=variable, y=Row, fill=value)) + geom_tile() + facets +  scale_y_discrete(breaks=NULL) + xscale + fill + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5)))
+        print(heatmapPlot)
 dev.off()
-
 
 
 # PLOT PROFILES
@@ -243,31 +249,29 @@ if(profileFreeScales){
 	profScales="free"
 }
 
+profilePlot <- ggplot(profiles, aes(x=variable, y=mean, group=Label)) + geom_line(aes(colour=Label)) + xscale
+
 # Faceting
-if(nrow(categories)==1) {
-   if (length(labels<2)) facets <- NA
-   else if (length(labels)>=2 && is.na(secondaryLabels)) facets <- NA
-   else if (length(labels)>=2 && !is.na(secondaryLabels)) facets <- facet_grid(~secLabel, scales=profScales)
+if(nrow(categories)==1 && length(labels)>=2 && !is.na(secondaryLabels)){
+	profilePlot <- profilePlot + facet_grid(~secLabel, scales=profScales)
 }
 
 if(nrow(categories)>1) {
-   if (length(labels)<2){
-           facets <- facet_grid(Category~., scales=profScales)
-   }
-   else if (length(labels)>=2 && is.na(secondaryLabels)) {
-           facets <- facet_grid(Category~., scales=profScales)
-   }
-   else if (length(labels)>=2 && !is.na(secondaryLabels)) {
-           facets <- facet_grid(Category~secLabel, scales=profScales)
-   }
+	if (length(labels)<2){
+		profilePlot <- profilePlot + facet_grid(Category~., scales=profScales)
+	}
+	else if (length(labels)>=2 && is.na(secondaryLabels)) {
+		profilePlot <- profilePlot + facet_grid(Category~., scales=profScales)
+	}
+	else if (length(labels)>=2 && !is.na(secondaryLabels)) {
+		profilePlot <- profilePlot +facet_grid(Category~secLabel, scales=profScales)
+	}
 }
 
-ribbon <- NA
 if(profileStdErr){
-	ribbon <- geom_ribbon(aes(ymin=mean-stderr, ymax=mean+stderr, fill=Label), alpha=0.3)
+	profilePlot <- profilePlot + geom_ribbon(aes(ymin=mean-stderr, ymax=mean+stderr, fill=Label), alpha=0.3)
 }
-
 
 pdf(outFileProfile, width=profW, height=profH)
-	print(ggplot(profiles, aes(x=variable, y=mean, group=Label)) + geom_line(aes(colour=Label)) + facets + ribbon + xscale)
+	print(profilePlot)
 dev.off()
