@@ -47,6 +47,11 @@ profileStdErr=T
 # or all subplots should have the same limits?
 profileFreeScales=F
 
+# Force negative numbers to 0
+# If logNorm is set to TRUE and you have negative values
+# in your files, you need this option
+negativeToZero=T
+
 # Output dimensions for the graphical devices
 # for heatmap and profiles.
 heatW=7
@@ -128,8 +133,24 @@ for(fileName in files){
 	# Read the matrix
 	mat <- read.delim(fileName, comment.char = "#", header=F, sep=" ")
 	colnames(mat) <- 1:ncol(mat)
-	mat[is.na(mat)] <- 0 # Add warning message
-	# Set negative number to 0 and print warning message
+	
+	if(any(is.na(mat))){
+		# Set negative number to 0 and print warning message
+		warning(paste("Some fields of '", fileName, "' do not contain any value.\nWe are forcing them to 0.\nDid you use '--missingDataAsZero' in computeMatrix?", sep=""))
+		mat[is.na(mat)] <- 0 
+	}
+	if(any(mat<0)){
+		if(negativeToZero){
+			mat[mat<0] <- 0
+		} else {
+			if(logNorm){
+				stop(paste("Some fields of '",fileName, "' contain negative values.\nThis is not going to work well with log normalisation.", sep=""))
+				#quit(save = "no", status = 1, runLast = FALSE)
+			} else{
+				warning(paste("Some fields of '", fileName, "' contain negative values.\nSet 'negativeToZero' to TRUE to force them to 0.", sep=""))
+			}
+		}
+	}
 
 	# Keep track of how many columns contain data
 	nfields <- ncol(mat)
