@@ -34,6 +34,17 @@ sortEach <- T
 # Log normalise the intensities?
 logNorm=FALSE
 
+# To avoid taking the log of 0 we add a small constant to each value
+# before taking the log. The variable minimumValue 
+# defines this small constant.
+# If set to NA it add to each value the minimum number !=0
+minimumValue=NA
+
+# Force negative numbers to 0
+# If logNorm is set to TRUE and you have negative values
+# in your files, you need this option
+negativeToZero=T
+
 # Saturate intensity above this quantile
 satQuantile=0.95
 
@@ -46,11 +57,6 @@ profileStdErr=T
 # Should each profile plot have a free y-axis scale
 # or all subplots should have the same limits?
 profileFreeScales=F
-
-# Force negative numbers to 0
-# If logNorm is set to TRUE and you have negative values
-# in your files, you need this option
-negativeToZero=T
 
 # Output dimensions for the graphical devices
 # for heatmap and profiles.
@@ -194,10 +200,12 @@ mat2 <- rbindlist(mat2)
 
 mm <- melt(mat2)
 
+if(logNorm) {
+	if(is.na(minimumValue)) minimumValue <- min(mm$value[mm$value>0])
+        mm$value <- log10(mm$value + minimumValue)
+}
+
 mm$Labels <- factor(mm$Labels, levels=unique(labels))
-
-
-
 
 hmcol = colorRampPalette(brewer.pal(9, "GnBu"))(100)
 
@@ -237,10 +245,6 @@ if(nrow(categories)>1) {
 
 
 # Scale fill
-if(logNorm) {
-        mm$value <- log10(mm$value + 1)
-}
-
 if(!is.na(satQuantile)){
         heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol, limits=c(0,quantile(mm$value, satQuantile)), oob=squish)
 } else {
