@@ -1,70 +1,36 @@
-# Tommaso Leonardi, tl344@ebi.ac.uk
+# Tommaso Leo2nardi, tl344@ebi.ac.uk
 # This script reads matrices produced by deeptools from bigWig files 
 # and generates multiple heatmaps in a single plot.
 
 #################################################
 #		CONFIGURATION
 #################################################
+suppressPackageStartupMessages(library("argparse"))
+# create parser object
+parser <- ArgumentParser()
+# specify our desired options # by default ArgumentParser will add an help option
+parser$add_argument("--files"             , nargs="+", help="List of files to load. The files produced by deeptools computeMatrix must all be sorted in the same way. This can be done with the --sortRegions \"no\" option in computeMatrix [default %(default)s]" )
+parser$add_argument("--labels"            , nargs="+", help="Primary sample labels. The must be one label per sample. eg K562 H1ESC [default %(default)s]" )
+parser$add_argument("--secondaryLabels"   , nargs="+", help="Secondary labels. If set, secondary labels will be used as an additional factor for faceting the plots (eg K562 H1ESC..). If not required set it to NA [default %(default)s]" , default="NA")
+parser$add_argument("--sortByFirst"       , help="Sort by intensity the first subplot and use the same order for all subsequent plots? (if not set, each subplot is sorted independently). [default %(default)s]" , default=FALSE , action="store_true" )
+parser$add_argument("--logNorm"           , help="Log normalise the intensities? [default %(default)s]"                                                       , default=FALSE , action="store_true")
+parser$add_argument("--minimumValue"      , help="To avoid taking the log of 0 we add a small constant to each value before taking the log. The variable minimumValue defines this small constant. If set to NA it add to each value the minimum number !=0 [default %(default)s]" , default="NA")
+parser$add_argument("--negativeToZero"    , help="Force negative numbers to 0. If logNorm is set to TRUE and you have negative values in your files, you need this option [default %(default)s]" , default=FALSE , action="store_true" )
+parser$add_argument("--satQuantile"       , type="double" ,  help="Saturate intensity above this quantile [default %(default)s]" , default=0.95 )
+parser$add_argument("--outFile"           , help="Basename for the outfile [default %(default)s]" , default="test" )
+parser$add_argument("--profileStdErr"     , help="Plot the std error as a ribbon in the profile plots? [default %(default)s]" , default=FALSE , action="store_true" )
+parser$add_argument("--profileFreeScales" , help="Should each profile plot have a free y-axis scale or all subplots should have the same limits? [default %(default)s]" , default=FALSE , action="store_true" )
+parser$add_argument("--heatW"             , type="integer" ,  help="Heatmap width [default %(default)s]" , default=7 )
+parser$add_argument("--heatH"             , type="integer" ,  help="Heatmap height [default %(default)s]" , default=14 )
+parser$add_argument("--profW"             , type="integer" ,  help="profile width [default %(default)s]" , default=7 )
+parser$add_argument("--profH"             , type="integer" ,  help="profile height [default %(default)s]" , default=8 )
+args <- parser$parse_args()
 
-# List of files to load
-# the files produced by deeptools computeMatrix must all be
-# sorted in the same way.
-# This can be done with the --sortRegions "no" option in computeMatrix.
-files <- c("K562H3k4me3StdSig.txt", "H1hescH3k4me3StdSig.txt", "wgEncodeSydhTfbsGm12878Pol2StdSig.txt", "wgEncodeSydhTfbsK562Pol2StdSig.txt")
+#patch NA
+for (n in names(args)){if(args[[n]][1] == "NA"  ){args[[n]] <- NA  } }
+for (n in names(args)){assign(n,args[[n]]) }
 
-# Primary sample labels
-# The must be one label per sample
-labels <- c("K562", "H1ESC","K562", "H1ESC")
-
-# Secondary labels
-# If set, secondary labels will be used as
-# an additional factor for faceting the plots
-# If not required set it to NA
-secondaryLabels<-NA
-#secondaryLabels <- c("H3K4me3", "H3K4me3", "Pol2", "Pol2")
-
-# Sort by intensity the first subplot and use the same
-# order for all subsequent plots?
-sortByFirst <- F
-
-# Sort each subplot by intensity?
-# (incompatible with sortByFirst)
-sortEach <- T
-
-# Log normalise the intensities?
-logNorm=FALSE
-
-# To avoid taking the log of 0 we add a small constant to each value
-# before taking the log. The variable minimumValue 
-# defines this small constant.
-# If set to NA it add to each value the minimum number !=0
-minimumValue=NA
-
-# Force negative numbers to 0
-# If logNorm is set to TRUE and you have negative values
-# in your files, you need this option
-negativeToZero=T
-
-# Saturate intensity above this quantile
-satQuantile=0.95
-
-# Basename for the outfile
-outFile="test"
-
-# Plot the std error as a ribbon in the profile plots?
-profileStdErr=T
-
-# Should each profile plot have a free y-axis scale
-# or all subplots should have the same limits?
-profileFreeScales=F
-
-# Output dimensions for the graphical devices
-# for heatmap and profiles.
-heatW=7
-heatH=14
-profW=7
-profH=8
-
+if(!sortByFirst) sortEach=T
 
 #################################################
 library("data.table")
@@ -73,11 +39,6 @@ library("RColorBrewer")
 library("ggplot2")
 library("dplyr")
 library("scales")
-
-if ( sortByFirst && sortEach){
-	stop("Incompatible options: sortEach and sortByFirst.")
-	quit(save = "no", status = 1, runLast = FALSE)	
-}
 
 if (length(labels) != length(files)){
 	stop("There must be the same number of files and labels")
@@ -205,7 +166,7 @@ if(logNorm) {
         mm$value <- log10(mm$value + minimumValue)
 }
 
-mm$Labels <- factor(mm$Labels, levels=unique(labels))
+mm$Label <- factor(mm$Label, levels=unique(labels))
 
 hmcol = colorRampPalette(brewer.pal(9, "GnBu"))(100)
 
