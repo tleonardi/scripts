@@ -20,10 +20,12 @@ parser$add_argument("--satQuantile"       , type="double" ,  help="Saturate inte
 parser$add_argument("--outFile"           , help="Basename for the outfile [default %(default)s]" , default="test" )
 parser$add_argument("--profileStdErr"     , help="Plot the std error as a ribbon in the profile plots? [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileFreeScales" , help="Should each profile plot have a free y-axis scale or all subplots should have the same limits? [default %(default)s]" , default=FALSE , action="store_true" )
+parser$add_argument("--profileSplitLabels" , help="If you don't have secondary labels you can choose to have a subplot for each label rather the plotting them in different colours in the same plot." , default=FALSE , action="store_true" )
 parser$add_argument("--heatW"             , type="integer" ,  help="Heatmap width [default %(default)s]" , default=4 )
 parser$add_argument("--heatH"             , type="integer" ,  help="Heatmap height [default %(default)s]" , default=13 )
 parser$add_argument("--profW"             , type="integer" ,  help="profile width [default %(default)s]" , default=7 )
 parser$add_argument("--profH"             , type="integer" ,  help="profile height [default %(default)s]" , default=8 )
+parser$add_argument("--title"             , help="Main title for the graph [default no title]" , default="NA")
 args <- parser$parse_args()
 
 #patch NA
@@ -60,13 +62,19 @@ if (!is.na(secondaryLabels) && length(secondaryLabels)==1){
 }
 
 if(is.na(secondaryLabels) && max(table(labels))>1){
-	        stop("Each sample must have a unique label")
+	stop("Each sample must have a unique label")
         quit(save = "no", status = 1, runLast = FALSE)
 }
 
 if(!is.na(secondaryLabels) && max(table(labels, secondaryLabels))>1){
-	        stop("Each sample must have a unique combination of label and secondary label")
+	stop("Each sample must have a unique combination of label and secondary label")
         quit(save = "no", status = 1, runLast = FALSE)
+}
+
+if(profileSplitLabels && !is.na(secondaryLabels)){
+	stop("You can't use profileSplitLabels when you have secondary labels")
+        quit(save = "no", status = 1, runLast = FALSE)
+
 }
 
 for(fileName in files){
@@ -190,6 +198,11 @@ if(body==0){
 
 heatmapPlot <- ggplot(mm, aes(x=variable, y=Row, fill=value)) + geom_tile() + scale_y_discrete(breaks=NULL) + xscale + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))
 
+# Add title
+if(!is.na(title)){
+	heatmapPlot <- heatmapPlot + ggtitle(title)
+}
+
 # Faceting
 if(nrow(categories)==1) {
    if (length(labels)>=2 && is.na(secondaryLabels)) heatmapPlot <- heatmapPlot + facet_grid(Label ~ ., scales = "free", space = "free")
@@ -241,6 +254,11 @@ if(profileFreeScales){
 
 profilePlot <- ggplot(profiles, aes(x=variable, y=mean, group=Label)) + geom_line(aes(colour=Label)) + xscale + theme_bw()
 
+# Add title
+if(!is.na(title)){
+	profilePlot <- profilePlot + ggtitle(title)
+}
+
 # Faceting
 if(nrow(categories)==1 && length(labels)>=2 && !is.na(secondaryLabels)){
 	profilePlot <- profilePlot + facet_grid(~secLabel, scales=profScales)
@@ -251,7 +269,11 @@ if(nrow(categories)>1) {
 		profilePlot <- profilePlot + facet_grid(Category~., scales=profScales)
 	}
 	else if (length(labels)>=2 && is.na(secondaryLabels)) {
-		profilePlot <- profilePlot + facet_grid(Category~., scales=profScales)
+		if(!is.na(profileSplitLabels)){
+			profilePlot <- profilePlot + facet_grid(Category~Label, scales=profScales)
+		}else{
+			profilePlot <- profilePlot + facet_grid(Category~., scales=profScales)
+		}
 	}
 	else if (length(labels)>=2 && !is.na(secondaryLabels)) {
 		profilePlot <- profilePlot +facet_grid(Category~secLabel, scales=profScales)
