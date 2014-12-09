@@ -1,4 +1,4 @@
-# Tommaso Leo2nardi, tl344@ebi.ac.uk
+# Tommaso Leonardi (tl344@ebi.ac.uk), Giovanni Bussotti (giovanni@ebi.ac.uk)
 # This script reads matrices produced by deeptools from bigWig files 
 # and generates multiple heatmaps in a single plot.
 
@@ -20,8 +20,8 @@ parser$add_argument("--satQuantile"       , type="double" ,  help="Saturate inte
 parser$add_argument("--outFile"           , help="Basename for the outfile [default %(default)s]" , default="test" )
 parser$add_argument("--profileStdErr"     , help="Plot the std error as a ribbon in the profile plots? [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileFreeScales" , help="Should each profile plot have a free y-axis scale or all subplots should have the same limits? [default %(default)s]" , default=FALSE , action="store_true" )
-parser$add_argument("--heatW"             , type="integer" ,  help="Heatmap width [default %(default)s]" , default=7 )
-parser$add_argument("--heatH"             , type="integer" ,  help="Heatmap height [default %(default)s]" , default=14 )
+parser$add_argument("--heatW"             , type="integer" ,  help="Heatmap width [default %(default)s]" , default=4 )
+parser$add_argument("--heatH"             , type="integer" ,  help="Heatmap height [default %(default)s]" , default=13 )
 parser$add_argument("--profW"             , type="integer" ,  help="profile width [default %(default)s]" , default=7 )
 parser$add_argument("--profH"             , type="integer" ,  help="profile height [default %(default)s]" , default=8 )
 args <- parser$parse_args()
@@ -30,7 +30,11 @@ args <- parser$parse_args()
 for (n in names(args)){if(args[[n]][1] == "NA"  ){args[[n]] <- NA  } }
 for (n in names(args)){assign(n,args[[n]]) }
 
-if(!sortByFirst) sortEach=T
+if(sortByFirst) {
+	        sortEach=F
+} else {
+	        sortEach=T
+}
 
 #################################################
 library("data.table")
@@ -235,7 +239,7 @@ if(profileFreeScales){
 	profScales="free"
 }
 
-profilePlot <- ggplot(profiles, aes(x=variable, y=mean, group=Label)) + geom_line(aes(colour=Label)) + xscale
+profilePlot <- ggplot(profiles, aes(x=variable, y=mean, group=Label)) + geom_line(aes(colour=Label)) + xscale + theme_bw()
 
 # Faceting
 if(nrow(categories)==1 && length(labels)>=2 && !is.na(secondaryLabels)){
