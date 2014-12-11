@@ -260,8 +260,17 @@ if(!is.na(title)){
 }
 
 # Faceting
-if(nrow(categories)==1 && length(labels)>=2 && !is.na(secondaryLabels)){
-	profilePlot <- profilePlot + facet_grid(~secLabel, scales=profScales)
+if(nrow(categories)==1 && length(labels)>=2){
+	if(is.na(secondaryLabels) && profileSplitLabels) {
+		profilePlot <- profilePlot + facet_grid(~Label, scales=profScales)
+	}
+	if(!is.na(secondaryLabels)){
+		if(profileSplitLabels){
+			profilePlot <- profilePlot + facet_grid(Label~secLabel, scales=profScales)
+		}else{
+			profilePlot <- profilePlot + facet_grid(~secLabel, scales=profScales)
+		}
+	}
 }
 
 if(nrow(categories)>1) {
@@ -269,7 +278,7 @@ if(nrow(categories)>1) {
 		profilePlot <- profilePlot + facet_grid(Category~., scales=profScales)
 	}
 	else if (length(labels)>=2 && is.na(secondaryLabels)) {
-		if(!is.na(profileSplitLabels)){
+		if(profileSplitLabels){
 			profilePlot <- profilePlot + facet_grid(Category~Label, scales=profScales)
 		}else{
 			profilePlot <- profilePlot + facet_grid(Category~., scales=profScales)
