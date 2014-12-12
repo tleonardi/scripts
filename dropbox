@@ -43,7 +43,7 @@ Options:
 
   -s		Shorten the URL using Google APIs
   -e <email>	Email address to send the link to.
-		Default: $DEFEMAIL
+		-e . sends the email to $DEFEMAIL
   -h		Print this help screen
   -u <URL>	Base URL of the http folder
 		Default: $URL
@@ -75,9 +75,6 @@ while true; do
                 if [[ -n "$2" ]]; then
                         EMAIL=$2
                         shift 2
-                else 
-			EMAIL=$DEFEMAIL
-			shift 1
 		fi
                 ;;
         -u)
@@ -158,6 +155,10 @@ if [[ -n $SHORT ]]; then
 	SHORTURL=$(curl --silent https://www.googleapis.com/urlshortener/v1/url   -H 'Content-Type: application/json'   -d '{"longUrl":'"\"$URL/$OUT\""'}' | grep -Po '"id":.*?[^\\]",' | perl -pe 's/"id"://; s/^[ ]"//; s/",$//' )
 	echo $SHORTURL
 	EMAILTEXT="Long URL: $URL/$OUT \nShort URL: $SHORTURL"
+fi
+
+if [[ $EMAIL == '.' ]];then
+	EMAIL=$DEFEMAIL;
 fi
 
 if [[ -n $EMAIL ]];then
