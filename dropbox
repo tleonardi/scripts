@@ -24,7 +24,7 @@
 
 
 # Configure default values
-EMAIL="tleonardi@gmail.com"
+DEFEMAIL="tleonardi@gmail.com"
 URL="http://www.ebi.ac.uk/~tl344/dropbox"
 FOLDER="/homes/tl344/public_html/dropbox"
 
@@ -43,13 +43,12 @@ Options:
 
   -s		Shorten the URL using Google APIs
   -e <email>	Email address to send the link to.
-		Default: $EMAIL
+		Default: $DEFEMAIL
   -h		Print this help screen
   -u <URL>	Base URL of the http folder
 		Default: $URL
   -f <folder>	Save the file in the specified http-accessible folder.
 		Default: $FOLDER
-  -n		Do not send an email
   -o <name>	Target file name
 		Default: source filename or date-time.html if reading from stdin
 EOF
@@ -76,7 +75,10 @@ while true; do
                 if [[ -n "$2" ]]; then
                         EMAIL=$2
                         shift 2
-                fi
+                else 
+			EMAIL=$DEFEMAIL
+			shift 1
+		fi
                 ;;
         -u)
                 if [[ -n "$2" ]]; then
@@ -94,10 +96,6 @@ while true; do
                 usage
 		exit 1
                 ;;
-	-n)
-		NOEMAIL=1
-		shift 1
-		;;
 	-o)
 		if [[ -n "$2" ]]; then
 			OUT=$2
@@ -162,7 +160,7 @@ if [[ -n $SHORT ]]; then
 	EMAILTEXT="Long URL: $URL/$OUT \nShort URL: $SHORTURL"
 fi
 
-if [[ -z $NOEMAIL ]];then
+if [[ -n $EMAIL ]];then
 	echo -e "$EMAILTEXT" | mail -s "Dropbox.sh: link to \"$OUT\"" $EMAIL
 fi
 
