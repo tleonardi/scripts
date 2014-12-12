@@ -32,7 +32,7 @@ usage()
 {
 cat <<EOF
 
-Usage: $(basename "$0") [-s] [-e <email>] [-h] [-u <url>] [-f <folder>] [-n] filename
+Usage: $(basename "$0") [-s] [-e <email>] [-h] [-u <url>] [-f <folder>] filename
 
 This script copies a file to an http-accessible folder, provides the URL
 pointing to it (and optionally a shortened URL) and optionally sends the
