@@ -16,7 +16,7 @@ parser$add_argument("--sortByFirst"       , help="Sort by intensity the first su
 parser$add_argument("--logNorm"           , help="Log normalise the intensities? [default %(default)s]"                                                       , default=FALSE , action="store_true")
 parser$add_argument("--minimumValue"      , help="To avoid taking the log of 0 we add a small constant to each value before taking the log. The variable minimumValue defines this small constant. If set to NA it add to each value the minimum number !=0 [default %(default)s]" , default="NA")
 parser$add_argument("--negativeToZero"    , help="Force negative numbers to 0. If logNorm is set to TRUE and you have negative values in your files, you need this option [default %(default)s]" , default=FALSE , action="store_true" )
-parser$add_argument("--satQuantile"       , type="double" ,  help="Saturate intensity above this quantile [default %(default)s]" , default=0.95 )
+parser$add_argument("--satQuantile"       , help="Saturate intensity above this quantile [default %(default)s]" , default="NA" )
 parser$add_argument("--outFile"           , help="Basename for the outfile [default %(default)s]" , default="test" )
 parser$add_argument("--profileStdErr"     , help="Plot the std error as a ribbon in the profile plots? [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileFreeScales" , help="Should each profile plot have a free y-axis scale or all subplots should have the same limits? [default %(default)s]" , default=FALSE , action="store_true" )
@@ -224,7 +224,7 @@ if(nrow(categories)>1) {
 
 # Scale fill
 if(!is.na(satQuantile)){
-        heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol, limits=c(0,quantile(mm$value, satQuantile)), oob=squish)
+        heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol, limits=c(min(mm$value),quantile(mm$value, satQuantile)), oob=squish)
 } else {
         heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol)
 }
