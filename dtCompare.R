@@ -224,7 +224,7 @@ if(nrow(categories)>1) {
 
 # Scale fill
 if(!is.na(satQuantile)){
-        heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol, limits=c(min(mm$value),quantile(mm$value, satQuantile)), oob=squish)
+        heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol, limits=c(min(mm$value),quantile(mm$value, as.numeric(satQuantile))), oob=squish)
 } else {
         heatmapPlot <- heatmapPlot + scale_fill_gradientn(colours=hmcol)
 }
