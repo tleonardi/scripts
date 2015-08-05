@@ -26,6 +26,8 @@ parser$add_argument("--heatH"             , type="integer" ,  help="Heatmap heig
 parser$add_argument("--profW"             , type="integer" ,  help="profile width [default %(default)s]" , default=7 )
 parser$add_argument("--profH"             , type="integer" ,  help="profile height [default %(default)s]" , default=8 )
 parser$add_argument("--title"             , help="Main title for the graph [default no title]" , default="NA")
+parser$add_argument("--noHeat"            , help="Don't save the heatmap" , default=FALSE , action="store_true")
+parser$add_argument("--noProf"            , help="Don't save the profile" , default=FALSE , action="store_true")
 args <- parser$parse_args()
 
 #patch NA
@@ -110,8 +112,8 @@ for(fileName in files){
 	fileLabel <- labels[fileIndex]
 	
 	# Read the matrix
-	mat <- read.delim(fileName, comment.char = "#", header=F, sep=" ")
-	colnames(mat) <- 1:ncol(mat)
+	mat <- as.data.frame(fread(fileName))
+	setnames(mat, colnames(mat), as.character(1:ncol(mat)))
 	
 	if(any(is.na(mat))){
 		# Set negative number to 0 and print warning message
@@ -234,10 +236,11 @@ outFileHeatMap <- paste(outFile, "_heatmap.pdf", sep="")
 outFileProfile <- paste(outFile, "_profile.pdf", sep="")
 
 
-
-pdf(outFileHeatMap, width=heatW, height=heatH)
-        print(heatmapPlot)
-dev.off()
+if(noHeat==FALSE){
+	pdf(outFileHeatMap, width=heatW, height=heatH)
+        	print(heatmapPlot)
+	dev.off()
+}
 
 
 # PLOT PROFILES
@@ -293,6 +296,8 @@ if(profileStdErr){
 	profilePlot <- profilePlot + geom_ribbon(aes(ymin=mean-stderr, ymax=mean+stderr, fill=Label), alpha=0.3)
 }
 
-pdf(outFileProfile, width=profW, height=profH)
-	print(profilePlot)
-dev.off()
+if(noProf==FALSE){
+	pdf(outFileProfile, width=profW, height=profH)
+		print(profilePlot)
+	dev.off()
+}
