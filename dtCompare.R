@@ -40,7 +40,7 @@ if(sortByFirst) {
 
 #################################################
 library("data.table")
-library("reshape")
+library("reshape2")
 library("RColorBrewer")
 library("ggplot2")
 library("dplyr")
@@ -171,7 +171,7 @@ for(fileName in files){
 
 mat2 <- rbindlist(mat2)
 
-mm <- melt(mat2)
+mm <- reshape2::melt(mat2, id.vars=c("Row", "Category", "Label"))
 
 if(logNorm) {
 	if(is.na(minimumValue)) minimumValue <- min(mm$value[mm$value>0])
@@ -191,7 +191,7 @@ body <- dimensions[dimensions$Name == "body", "dim"]/binsize
 if(body==0){
 	xscale <- scale_x_discrete(breaks=c(1, downstream, downstream+upstream), labels=c(paste("-", downstream*binsize/1000, "Kb", sep=""), "TSS", paste("+", upstream*binsize/1000, "Kb", sep="")))
 } else {
-	xscale <- scale_x_discrete(breaks=c(1, downstream, downstream+body, downstream+downstream+upstream), labels=c(paste("-", downstream*binsize/1000, "Kb", sep=""), "TSS", "TES", paste("+", upstream*binsize/1000, "Kb", sep="")))
+	xscale <- scale_x_discrete(breaks=c(1, downstream, downstream+body, downstream+body+upstream), labels=c(paste("-", downstream*binsize/1000, "Kb", sep=""), "TSS", "TES", paste("+", upstream*binsize/1000, "Kb", sep="")))
 	
 }
 
