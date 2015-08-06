@@ -18,6 +18,7 @@ parser$add_argument("--minimumValue"      , help="To avoid taking the log of 0 w
 parser$add_argument("--negativeToZero"    , help="Force negative numbers to 0. If logNorm is set to TRUE and you have negative values in your files, you need this option [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--satQuantile"       , help="Saturate intensity above this quantile [default %(default)s]" , default="NA" )
 parser$add_argument("--outFile"           , help="Basename for the outfile [default %(default)s]" , default="test" )
+parser$add_argument("--outTable"          , help="Save to file the table that ggplot2 will plot as heatmap. The Label field identifies the individual matrices, and the rows of the table are in inverse orientation with respect to the heatmap plot" , default=NA )
 parser$add_argument("--profileStdErr"     , help="Plot the std error as a ribbon in the profile plots? [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileFreeScales" , help="Should each profile plot have a free y-axis scale or all subplots should have the same limits? [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileSplitLabels" , help="If you don't have secondary labels you can choose to have a subplot for each label rather the plotting them in different colours in the same plot." , default=FALSE , action="store_true" )
@@ -28,6 +29,7 @@ parser$add_argument("--profH"             , type="integer" ,  help="profile heig
 parser$add_argument("--title"             , help="Main title for the graph [default no title]" , default="NA")
 parser$add_argument("--noHeat"            , help="Don't save the heatmap" , default=FALSE , action="store_true")
 parser$add_argument("--noProf"            , help="Don't save the profile" , default=FALSE , action="store_true")
+parser$add_argument("--centerLabel"       , help="If you plot matrices centered on TES insted of TSS set this option to TES. Otherwise if your matrices correspond to scaled regions ingnore this option" , default="TSS")
 args <- parser$parse_args()
 
 #patch NA
@@ -173,6 +175,10 @@ for(fileName in files){
 
 mat2 <- rbindlist(mat2)
 
+if(!is.na(outTable)){
+	write.table(mat2, file = outTable, append = FALSE, quote = FALSE, sep = "\t")
+}
+
 mm <- reshape2::melt(mat2, id.vars=c("Row", "Category", "Label"))
 
 if(logNorm) {
@@ -191,7 +197,7 @@ upstream <- dimensions[dimensions$Name == "upstream", "dim"]/binsize
 body <- dimensions[dimensions$Name == "body", "dim"]/binsize
 
 if(body==0){
-	xscale <- scale_x_discrete(breaks=c(1, downstream, downstream+upstream), labels=c(paste("-", downstream*binsize/1000, "Kb", sep=""), "TSS", paste("+", upstream*binsize/1000, "Kb", sep="")))
+	xscale <- scale_x_discrete(breaks=c(1, downstream, downstream+upstream), labels=c(paste("-", downstream*binsize/1000, "Kb", sep=""), centerLabel, paste("+", upstream*binsize/1000, "Kb", sep="")))
 } else {
 	xscale <- scale_x_discrete(breaks=c(1, downstream, downstream+body, downstream+body+upstream), labels=c(paste("-", downstream*binsize/1000, "Kb", sep=""), "TSS", "TES", paste("+", upstream*binsize/1000, "Kb", sep="")))
 	
