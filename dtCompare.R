@@ -18,7 +18,7 @@ parser$add_argument("--minimumValue"      , help="To avoid taking the log of 0 w
 parser$add_argument("--negativeToZero"    , help="Force negative numbers to 0. If logNorm is set to TRUE and you have negative values in your files, you need this option [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--satQuantile"       , help="Saturate intensity above this quantile [default %(default)s]" , default="NA" )
 parser$add_argument("--outFile"           , help="Basename for the outfile [default %(default)s]" , default="test" )
-parser$add_argument("--outTable"          , help="Save to file the table that ggplot2 will plot as heatmap. The Label field identifies the individual matrices, and the rows of the table are in inverse orientation with respect to the heatmap plot" , default=NA )
+parser$add_argument("--outTable"          , help="Save to file the table that ggplot2 will plot as heatmap. The Label field identifies the individual matrices, and the rows of the table are in inverse orientation with respect to the heatmap plot" , default="NA" )
 parser$add_argument("--profileStdErr"     , help="Plot the std error as a ribbon in the profile plots? [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileFreeScales" , help="Should each profile plot have a free y-axis scale or all subplots should have the same limits? [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileSplitLabels" , help="If you don't have secondary labels you can choose to have a subplot for each label rather the plotting them in different colours in the same plot." , default=FALSE , action="store_true" )
