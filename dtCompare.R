@@ -20,6 +20,9 @@ parser$add_argument("--satQuantile"       , help="Saturate intensity above this 
 parser$add_argument("--outFile"           , help="Basename for the outfile [default %(default)s]" , default="test" )
 parser$add_argument("--outTable"          , help="Save to file the table that ggplot2 will plot as heatmap. The Label field identifies the individual matrices, and the rows of the table are in inverse orientation with respect to the heatmap plot" , default="NA" )
 parser$add_argument("--profileStdErr"     , help="Plot the std error as a ribbon in the profile plots? [default %(default)s]" , default=FALSE , action="store_true" )
+parser$add_argument("--profileSD"         , type="integer" ,  help="Plot one or more standard deviations (SD) as a ribbon in the profile plots? Even if the data (columns of the input matrices) is not normally distributed, the SD can be applied to arbitrary distributions. See the Chebyshev's inequality  [default %(default)s]" , default=0 )
+parser$add_argument("--profileMAD"        , help="Plot the mean absolute deviation as a ribbon in the profile plots? [default %(default)s]" , default=FALSE , action="store_true" )
+parser$add_argument("--profileCI"        , help="Plot the confidence interval at confidence level 95% as a ribbon in the profile plots? The implemented formula works for quantitative continuous data (eg chip-seq support) but not for discrete qualitative data (eg categories, yes or no). It uses the t distribution for sample sizes < 30 [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileFreeScales" , help="Should each profile plot have a free y-axis scale or all subplots should have the same limits? [default %(default)s]" , default=FALSE , action="store_true" )
 parser$add_argument("--profileSplitLabels" , help="If you don't have secondary labels you can choose to have a subplot for each label rather the plotting them in different colours in the same plot." , default=FALSE , action="store_true" )
 parser$add_argument("--heatW"             , type="integer" ,  help="Heatmap width [default %(default)s]" , default=4 )
@@ -77,6 +80,12 @@ if(!is.na(secondaryLabels) && max(table(labels, secondaryLabels))>1){
 
 if(profileSplitLabels && !is.na(secondaryLabels)){
 	stop("You can't use profileSplitLabels when you have secondary labels")
+        quit(save = "no", status = 1, runLast = FALSE)
+
+}
+
+if((profileStdErr && profileCI) || (profileStdErr && profileMAD) || (profileStdErr && (profileSD > 0)) || (profileMAD && profileCI) || (profileMAD && (profileSD > 0))) {
+	stop("You should not visualize at the same time multiple different error areas in the profile plot")
         quit(save = "no", status = 1, runLast = FALSE)
 
 }
@@ -248,12 +257,12 @@ if(noHeat==FALSE){
 	dev.off()
 }
 
-
 # PLOT PROFILES
 if(!is.na(secondaryLabels)){
-	profiles <- group_by(mm, Category, Label, secLabel, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value)))
+	profiles <- group_by(mm, Category, Label, secLabel, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value)) , sd=sd(value),  MAD=sum(abs(value - mean(value)))/length(value) , CIlow=if(length(value)<30){t.test(value)$conf.int[1]}else{mean(value) - (1.96 * sd(value)/sqrt(length(value)))}  ,   CIhigh=if(length(value)<30) {t.test(value)$conf.int[2]}else{mean(value) + (1.96 * sd(value)/sqrt(length(value)))} )
 } else {
-	profiles <- group_by(mm, Category, Label, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value)))
+	profiles <- group_by(mm, Category, Label, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value))           , sd=sd(value), MAD=sum(abs(value - mean(value)))/length(value) , CIlow=if(length(value)<30){t.test(value)$conf.int[1]}else{mean(value) - (1.96 * sd(value)/sqrt(length(value)))}  ,   CIhigh=if(length(value)<30) {t.test(value)$conf.int[2]}else{mean(value) + (1.96 * sd(value)/sqrt(length(value)))} )
+
 }
 
 profScales="fixed"
@@ -300,6 +309,18 @@ if(nrow(categories)>1) {
 
 if(profileStdErr){
 	profilePlot <- profilePlot + geom_ribbon(aes(ymin=mean-stderr, ymax=mean+stderr, fill=Label), alpha=0.3)
+}
+
+if(profileMAD){
+	profilePlot <- profilePlot + geom_ribbon(aes(ymin=mean-MAD, ymax=mean+MAD, fill=Label), alpha=0.3)
+}
+
+if(profileCI){
+	profilePlot <- profilePlot + geom_ribbon(aes(ymin=CIlow, ymax=CIhigh, fill=Label), alpha=0.3)
+}
+
+if(profileSD > 0){
+	profilePlot <- profilePlot + geom_ribbon(aes(ymin=mean - (profileSD * sd), ymax=mean + (profileSD * sd), fill=Label), alpha=0.3)
 }
 
 if(noProf==FALSE){
