@@ -197,7 +197,7 @@ if(any(!is.na(secondaryLabels))){
 
 if(logNorm) {
 	if(is.na(minimumValue)) minimumValue <- min(mm$value[mm$value>0])
-        mm$value <- log10(mm$value + minimumValue)
+        mm$value <- log10(mm$value + as.numeric(minimumValue))
 }
 
 mm$Label <- factor(mm$Label, levels=unique(labels))
