@@ -32,6 +32,7 @@ parser$add_argument("--profH"             , type="integer" ,  help="profile heig
 parser$add_argument("--title"             , help="Main title for the graph [default no title]" , default="NA")
 parser$add_argument("--noHeat"            , help="Don't save the heatmap" , default=FALSE , action="store_true")
 parser$add_argument("--noProf"            , help="Don't save the profile" , default=FALSE , action="store_true")
+parser$add_argument("--verticalProfLabels", help="Print the labels of the x-axis of the Profile vertically." , default=TRUE , action="store_false")
 parser$add_argument("--centerLabel"       , help="If you plot matrices centered on TES insted of TSS set this option to TES. Otherwise if your matrices correspond to scaled regions ingnore this option" , default="TSS")
 args <- parser$parse_args()
 
@@ -58,27 +59,27 @@ if (length(labels) != length(files)){
 	quit(save = "no", status = 1, runLast = FALSE)	
 }
 
-if (!is.na(secondaryLabels) && length(secondaryLabels) != length(labels)){
+if (any(!is.na(secondaryLabels)) && length(secondaryLabels) != length(labels)){
 	stop("There must be the same number of primary and secondary labels")
 	quit(save = "no", status = 1, runLast = FALSE)	
 }
 
-if (!is.na(secondaryLabels) && length(secondaryLabels)==1){
+if (any(!is.na(secondaryLabels)) && length(secondaryLabels)==1){
 	stop("It's unnecessary to use secondary labels if you only have one file")
 	quit(save = "no", status = 1, runLast = FALSE)	
 }
 
-if(is.na(secondaryLabels) && max(table(labels))>1){
+if(any(is.na(secondaryLabels)) && max(table(labels))>1){
 	stop("Each sample must have a unique label")
         quit(save = "no", status = 1, runLast = FALSE)
 }
 
-if(!is.na(secondaryLabels) && max(table(labels, secondaryLabels))>1){
+if(any(!is.na(secondaryLabels)) && max(table(labels, secondaryLabels))>1){
 	stop("Each sample must have a unique combination of label and secondary label")
         quit(save = "no", status = 1, runLast = FALSE)
 }
 
-if(profileSplitLabels && !is.na(secondaryLabels)){
+if(profileSplitLabels && any(!is.na(secondaryLabels))){
 	stop("You can't use profileSplitLabels when you have secondary labels")
         quit(save = "no", status = 1, runLast = FALSE)
 
@@ -176,7 +177,7 @@ for(fileName in files){
 	mat$Label <- fileLabel
 
 	# If there are secondary labels also make a column
-	if(!is.na(secondaryLabels)){
+	if(any(!is.na(secondaryLabels))){
 		mat$secLabel <- secondaryLabels[fileIndex]
 	}
 	mat2[[fileIndex]] <- mat
@@ -188,7 +189,11 @@ if(!is.na(outTable)){
 	write.table(mat2, file = outTable, append = FALSE, quote = FALSE, sep = "\t")
 }
 
-mm <- reshape2::melt(mat2, id.vars=c("Row", "Category", "Label"))
+if(any(!is.na(secondaryLabels))){
+	mm <- reshape2::melt(mat2, id.vars=c("Row", "Category", "Label", "secLabel" ))
+} else {
+	mm <- reshape2::melt(mat2, id.vars=c("Row", "Category", "Label"))
+}
 
 if(logNorm) {
 	if(is.na(minimumValue)) minimumValue <- min(mm$value[mm$value>0])
@@ -222,18 +227,18 @@ if(!is.na(title)){
 
 # Faceting
 if(nrow(categories)==1) {
-   if (length(labels)>=2 && is.na(secondaryLabels)) heatmapPlot <- heatmapPlot + facet_grid(Label ~ ., scales = "free", space = "free")
-   else if (length(labels)>=2 && !is.na(secondaryLabels)) heatmapPlot <- heatmapPlot + facet_grid(Label ~ secLabel, scales = "free", space = "free")
+   if (length(labels)>=2 && any(is.na(secondaryLabels))) heatmapPlot <- heatmapPlot + facet_grid(Label ~ ., scales = "free", space = "free")
+   else if (length(labels)>=2 && any(!is.na(secondaryLabels))) heatmapPlot <- heatmapPlot + facet_grid(Label ~ secLabel, scales = "free", space = "free")
 }
 
 if(nrow(categories)>1) {
    if (length(labels)<2){
            heatmapPlot <- heatmapPlot + facet_grid(Category ~ ., scales = "free", space = "free")
    }
-   else if (length(labels)>=2 && is.na(secondaryLabels)) {
+   else if (length(labels)>=2 && any(is.na(secondaryLabels))) {
            heatmapPlot <- heatmapPlot + facet_grid(Category ~ Label, scales = "free", space = "free")
    }
-   else if (length(labels)>=2 && !is.na(secondaryLabels)) {
+   else if (length(labels)>=2 && any(!is.na(secondaryLabels))) {
            heatmapPlot <- heatmapPlot + facet_grid(secLabel+Category ~ Label, scales = "free", space = "free")
    }
 }
@@ -258,7 +263,7 @@ if(noHeat==FALSE){
 }
 
 # PLOT PROFILES
-if(!is.na(secondaryLabels)){
+if(any(!is.na(secondaryLabels))){
 	profiles <- group_by(mm, Category, Label, secLabel, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value)) , sd=sd(value),  MAD=sum(abs(value - mean(value)))/length(value) , CIlow=if(length(value)<30){t.test(value)$conf.int[1]}else{mean(value) - (1.96 * sd(value)/sqrt(length(value)))}  ,   CIhigh=if(length(value)<30) {t.test(value)$conf.int[2]}else{mean(value) + (1.96 * sd(value)/sqrt(length(value)))} )
 } else {
 	profiles <- group_by(mm, Category, Label, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value))           , sd=sd(value), MAD=sum(abs(value - mean(value)))/length(value) , CIlow=if(length(value)<30){t.test(value)$conf.int[1]}else{mean(value) - (1.96 * sd(value)/sqrt(length(value)))}  ,   CIhigh=if(length(value)<30) {t.test(value)$conf.int[2]}else{mean(value) + (1.96 * sd(value)/sqrt(length(value)))} )
@@ -279,10 +284,10 @@ if(!is.na(title)){
 
 # Faceting
 if(nrow(categories)==1 && length(labels)>=2){
-	if(is.na(secondaryLabels) && profileSplitLabels) {
+	if(any(is.na(secondaryLabels)) && profileSplitLabels) {
 		profilePlot <- profilePlot + facet_wrap(~Label, ncol=1, scales=profScales)
 	}
-	if(!is.na(secondaryLabels)){
+	if(any(!is.na(secondaryLabels))){
 		if(profileSplitLabels){
 			profilePlot <- profilePlot + facet_grid(Label~secLabel, scales=profScales)
 		}else{
@@ -295,14 +300,14 @@ if(nrow(categories)>1) {
 	if (length(labels)<2){
 		profilePlot <- profilePlot + facet_wrap(~Category, ncol=1, scales=profScales)
 	}
-	else if (length(labels)>=2 && is.na(secondaryLabels)) {
+	else if (length(labels)>=2 && any(is.na(secondaryLabels))) {
 		if(profileSplitLabels){
 			profilePlot <- profilePlot + facet_grid(Category~Label, scales=profScales)
 		}else{
 			profilePlot <- profilePlot + facet_wrap(~Category, ncol=1, scales=profScales)
 		}
 	}
-	else if (length(labels)>=2 && !is.na(secondaryLabels)) {
+	else if (length(labels)>=2 && any(!is.na(secondaryLabels))) {
 		profilePlot <- profilePlot +facet_grid(Category~secLabel, scales=profScales)
 	}
 }
@@ -323,6 +328,9 @@ if(profileSD > 0){
 	profilePlot <- profilePlot + geom_ribbon(aes(ymin=mean - (profileSD * sd), ymax=mean + (profileSD * sd), fill=Label), alpha=0.3)
 }
 
+if(verticalProfLabels){
+	profilePlot <- profilePlot + theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust=0.5))
+}
 if(noProf==FALSE){
 	pdf(outFileProfile, width=profW, height=profH)
 		print(profilePlot)
