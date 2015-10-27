@@ -34,6 +34,8 @@ parser$add_argument("--noHeat"            , help="Don't save the heatmap" , defa
 parser$add_argument("--noProf"            , help="Don't save the profile" , default=FALSE , action="store_true")
 parser$add_argument("--verticalProfLabels", help="Print the labels of the x-axis of the Profile vertically." , default=TRUE , action="store_false")
 parser$add_argument("--centerLabel"       , help="If you plot matrices centered on TES insted of TSS set this option to TES. Otherwise if your matrices correspond to scaled regions ingnore this option" , default="TSS")
+parser$add_argument("--normFactors"       , nargs="+", help="Space separate list of normalisation factors. Each matrix will be divided by its corresponding factor. --files and --normFactors must contain the same number of elements and in the same order." , default="NA")
+
 args <- parser$parse_args()
 
 #patch NA
@@ -91,6 +93,15 @@ if((profileStdErr && profileCI) || (profileStdErr && profileMAD) || (profileStdE
 
 }
 
+if (any(!is.na(normFactors))){
+    normFactors <- as.numeric(as.character(normFactors))
+    if(length(normFactors) != length(files)){
+	stop("There must be the same number of files and normalisation factors.")
+        quit(save = "no", status = 1, runLast = FALSE)
+    }
+}
+
+
 for(fileName in files){
 	if(as.numeric(system(paste("grep ^# ", fileName, " | wc -l"), intern=T)) != 2){
 		stop(paste(fileName, " has wrong format.", sep=""))
@@ -115,17 +126,20 @@ for(fileName in files){
 }
 
 
-
 mat2 <- list()
 for(fileName in files){
 
 	fileIndex <- which(files==fileName)
 	# Get the label for the current file
 	fileLabel <- labels[fileIndex]
-	
 	# Read the matrix
 	mat <- as.data.frame(fread(fileName))
 	setnames(mat, colnames(mat), as.character(1:ncol(mat)))
+
+	if (any(!is.na(normFactors))){
+		NFact <- normFactors[fileIndex]	
+		mat <- mat/NFact
+	}
 	
 	if(any(is.na(mat))){
 		# Set negative number to 0 and print warning message
