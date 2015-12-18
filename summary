@@ -36,6 +36,7 @@ Same as quantile(type=7) in R.
 
   -h		Print this help screen
   -c <1>	Column
+  -m <1024>	Size of sort buffer (in MB)
 EOF
 }
 
@@ -63,6 +64,13 @@ while true; do
 		else exit 1
 		fi
 		;;
+	-m)
+                if [[ -n "$2" ]]; then
+                        MEM=$2
+                        shift 2
+                else exit 1
+                fi
+                ;;
 	\?)
       		echo "Invalid option: -$OPTARG" >&2
       		exit 1
@@ -98,7 +106,11 @@ if [[ -z $COL ]]; then
 	COL=1
 fi
 
-cut -f$COL <&0 | tee >(wc -l>$fifo) | sort -k1,1n | awk -v C=$(cat $fifo) '
+if [[ -z $COL ]]; then
+	        MEM=1024
+fi
+
+cut -f$COL <&0 | tee >(wc -l>$fifo) | sort -S $MEM -k1,1n | awk -v C=$(cat $fifo) '
 BEGIN{print "n="C}
 {
 tot+=$1

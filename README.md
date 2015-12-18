@@ -2,6 +2,7 @@
 This is my collection of various scripts (mostly bash and R) to automate simple repetive tasks.
 
 ## Table of contents
+- [summary](#summary)
 - [p2fdr](#p2fdr)
 - [calcContext](#calccontextr)
 - [collapseCSV](#collapsecsv)
@@ -12,7 +13,6 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 - [dropbox](#dropbox)
 - [csv2html](#csv2htm)
 - [dtCompare](#dtcompare)
-- [summary](#summary)
 
 ## summary
 Efficient script that reads a file and prints summary 
@@ -23,6 +23,7 @@ Usage:
     summary [-h] [-c column] filename
        -h     Print this help screen
        -c <1>        Column
+       -m <1024>     Size of sort buffer (in MB)
 
 ## p2fdr
 Reads a tab separated file and uses the Benjamini and Hochberg method
