@@ -106,7 +106,7 @@ if [[ -z $COL ]]; then
 	COL=1
 fi
 
-if [[ -z $COL ]]; then
+if [[ -z $MEM ]]; then
 	        MEM=1024
 fi
 
