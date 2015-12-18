@@ -12,6 +12,17 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 - [dropbox](#dropbox)
 - [csv2html](#csv2htm)
 - [dtCompare](#dtcompare)
+- [summary](#summary)
+
+## summary
+Efficient script that reads a file and prints summary 
+statistics (n, min, quartiles, max, median, mean).
+
+Usage:
+     
+    summary [-h] [-c column] filename
+       -h     Print this help screen
+       -c <1>        Column
 
 ## p2fdr
 Reads a tab separated file and uses the Benjamini and Hochberg method

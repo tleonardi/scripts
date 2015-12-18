@@ -1,0 +1,117 @@
+#!/bin/bash
+#The MIT License (MIT)
+#
+#Copyright (c) 2015 Tommaso Leonardi, tleonardi@gmail.com
+#
+#Permission is hereby granted, free of charge, to any person obtaining a copy
+#of this software and associated documentation files (the "Software"), to deal
+#in the Software without restriction, including without limitation the rights
+#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+#copies of the Software, and to permit persons to whom the Software is
+#furnished to do so, subject to the following conditions:
+#
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+#
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+#
+
+usage()
+{
+cat <<EOF
+
+Usage: $(basename "$0") [-h] [-c column] filename
+
+This script prints min, max and quartiles of the values in the
+specified column.
+The quantiles algorithm is the linear interpolation of the modes
+for the order statistics for the uniform distribution on [0,1].
+Same as quantile(type=7) in R.
+
+  -h		Print this help screen
+  -c <1>	Column
+EOF
+}
+
+
+ARGS=$(getopt -o "hc:" -n "dist.sh" -- "$@")
+
+if [ $? -ne 0 ]; then
+    usage
+    exit 1;
+fi
+
+eval set -- "$ARGS"
+
+# Now go through all the options
+while true; do
+    case "$1" in
+        -h)
+                usage
+		exit 1
+                ;;
+	-c)
+		if [[ -n "$2" ]]; then
+			COL=$2
+			shift 2
+		else exit 1
+		fi
+		;;
+	\?)
+      		echo "Invalid option: -$OPTARG" >&2
+      		exit 1
+      		;;
+        --) shift ; break;;
+    esac
+done
+
+
+
+fifo=$(mktemp -u)
+
+
+if [[ ! -a $fifo ]]; then
+	mkfifo $fifo
+	trap "rm -f $fifo" EXIT
+else
+	echo "Can't create fifo: $fifo"
+	exit 1
+fi
+
+if [[ -n "$1" ]]; then
+	# FILE provided
+	FILE=$1
+	if [[ ! -f $FILE ]]; then
+		echo "$FILE: no such file";
+		exit 1;
+	fi
+	exec < $FILE
+fi
+
+if [[ -z $COL ]]; then
+	COL=1
+fi
+
+cut -f$COL <&0 | tee >(wc -l>$fifo) | sort -k1,1n | awk -v C=$(cat $fifo) '
+BEGIN{print "n="C}
+{
+tot+=$1
+if(NR==1){printf("Min: %.4f\n",$1)}; 
+if(NR==C){printf("Max: %.4f\n",$1)};
+for(p=0.25; p<1; p+=0.25){
+	h=((C-1)*p)+1
+	if(NR==int(h)) { xh=$1}
+	if(NR==int(h)+1){
+		if(h % 1 == 0){ printf("%.2f: %.4f\n",p,xh)}
+		else {printf("%.2f: %.4f\n",p,xh + (h - int(h)) * ($1 - xh))}
+	}
+}
+}
+END{print "Mean: "tot/NR}
+'
