@@ -35,6 +35,7 @@ parser$add_argument("--noProf"            , help="Don't save the profile" , defa
 parser$add_argument("--verticalProfLabels", help="Print the labels of the x-axis of the Profile vertically." , default=TRUE , action="store_false")
 parser$add_argument("--centerLabel"       , help="If you plot matrices centered on TES insted of TSS set this option to TES. Otherwise if your matrices correspond to scaled regions ingnore this option" , default="TSS")
 parser$add_argument("--normFactors"       , nargs="+", help="Space separate list of normalisation factors. Each matrix will be divided by its corresponding factor. --files and --normFactors must contain the same number of elements and in the same order." , default="NA")
+parser$add_argument("--debug"            , help="Save an object called '.dtCompare.debug' in the current folder that stores useful debugging data." , default=FALSE , action="store_true")
 
 args <- parser$parse_args()
 
@@ -48,6 +49,10 @@ if(sortByFirst) {
 	        sortEach=T
 }
 
+if(debug){
+	save.image(file=".dtCompare.debug")
+	quit(save="no")
+}
 #################################################
 library("data.table")
 library("reshape2")
@@ -276,13 +281,44 @@ if(noHeat==FALSE){
 	dev.off()
 }
 
+calculateCIs <- function(value){
+# Calculate the upper and lower 95% confidence interval.
+# If there's less then 30 data points use a t.distribution
+	res<-list()
+	if(length(value)<30 ){
+		# Before running the t-test we need to check whether
+		# all values are equal. If they are, t.test() would 
+		# quit with an error.
+		# The code to test for equality of elements of a vector was
+		# modified from Hadley's answer: http://stackoverflow.com/a/4752580/3173905
+		tolerance = .Machine$double.eps ^ 0.5
+		x <- range(value) / mean(value)
+		if(isTRUE(all.equal(x[1], x[2], tolerance = tolerance))){
+			if(profileCI){
+				stop("In one ore more category there is less then 30 elements and they are all equal: can't compute the CI from a t.distribution")
+		        	quit(save = "no", status = 1, runLast = FALSE)
+			} else{
+				res$low=NA_real_
+				res$hig=NA_real_
+			}
+		}else{
+			res$low=t.test(value)$conf.int[1]
+			res$high=t.test(value)$conf.int[2]
+		}
+	} else {
+		res$low=mean(value) - (1.96 * sd(value)/sqrt(length(value)))
+		res$high=mean(value) + (1.96 * sd(value)/sqrt(length(value)))
+	}
+return(res)
+}
 # PLOT PROFILES
 if(any(!is.na(secondaryLabels))){
-	profiles <- group_by(mm, Category, Label, secLabel, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value)) , sd=sd(value),  MAD=sum(abs(value - mean(value)))/length(value) , CIlow=if(length(value)<30){t.test(value)$conf.int[1]}else{mean(value) - (1.96 * sd(value)/sqrt(length(value)))}  ,   CIhigh=if(length(value)<30) {t.test(value)$conf.int[2]}else{mean(value) + (1.96 * sd(value)/sqrt(length(value)))} )
+	profiles <- group_by(mm, Category, Label, secLabel, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value)) , sd=sd(value),  MAD=sum(abs(value - mean(value)))/length(value), CIlow=calculateCIs(value)$low, CIhigh=calculateCIs(value)$high)
 } else {
-	profiles <- group_by(mm, Category, Label, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value))           , sd=sd(value), MAD=sum(abs(value - mean(value)))/length(value) , CIlow=if(length(value)<30){t.test(value)$conf.int[1]}else{mean(value) - (1.96 * sd(value)/sqrt(length(value)))}  ,   CIhigh=if(length(value)<30) {t.test(value)$conf.int[2]}else{mean(value) + (1.96 * sd(value)/sqrt(length(value)))} )
+	profiles <- group_by(mm, Category, Label, variable) %>% summarise(mean=mean(value), stderr=sd(value)/sqrt(length(value))           , sd=sd(value), MAD=sum(abs(value - mean(value)))/length(value), CIlow=calculateCIs(value)$low, CIhigh=calculateCIs(value)$high)
 
 }
+
 
 profScales="fixed"
 if(profileFreeScales){
