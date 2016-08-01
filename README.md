@@ -13,6 +13,8 @@ This is my collection of various scripts (mostly bash and R) to automate simple 
 - [dropbox](#dropbox)
 - [csv2html](#csv2htm)
 - [dtCompare](#dtcompare)
+- [regExSelect](#regexselect)
+
 
 ## summary
 Efficient script that reads a file and prints summary 
@@ -137,3 +139,11 @@ Each input matrix can be generated with a command like this:
 ```
 computeMatrix reference-point --referencePoint TSS --regionsFileName annotation.bed  --sortRegions "no" --outFileNameMatrix matrix.txt --scoreFileName path.to.bigWig --beforeRegionStartLength 1000 --afterRegionStartLength 1000 --binSize 10 --missingDataAsZero --outFileName outfile
 ```
+
+# regExSelect
+This script for Adobe Illustrator selects text elements whose content matches a regular expression.
+
+The search applies only to the selected objects. If no objects are selected it searches the whole document.
+
+Tested in Illustrator CS6
+
