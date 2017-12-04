@@ -9,7 +9,7 @@ suppressPackageStartupMessages(library("argparse"))
 # create parser object
 parser <- ArgumentParser()
 # specify our desired options # by default ArgumentParser will add an help option
-parser$add_argument("--files"             , nargs="+", help="List of files to load. The files produced by deeptools computeMatrix must all be sorted in the same way. This can be done with the --sortRegions \"no\" option in computeMatrix [default %(default)s]" )
+parser$add_argument("--files"             , nargs="+", help="List of files to load. The files produced by deeptools computeMatrix must all be sorted in the same way. This can be done with the --sortRegions \"keep\" option in computeMatrix [default %(default)s]" )
 parser$add_argument("--labels"            , nargs="+", help="Primary sample labels. The must be one label per sample. eg K562 H1ESC [default %(default)s]" )
 parser$add_argument("--secondaryLabels"   , nargs="+", help="Secondary labels. If set, secondary labels will be used as an additional factor for faceting the plots (eg K562 H1ESC..). If not required set it to NA [default %(default)s]" , default="NA")
 parser$add_argument("--sortByFirst"       , help="Sort by intensity the first subplot and use the same order for all subsequent plots? (if not set, each subplot is sorted independently). [default %(default)s]" , default=FALSE , action="store_true" )
